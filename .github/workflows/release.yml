@@ -18,6 +18,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npx electron-builder --win --publish always
+      # Build only; upload happens in a single step below. electron-builder's own
+      # publisher uploads in parallel and can create duplicate draft releases.
+      - run: npx electron-builder --win --publish never
+      - name: Create GitHub release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" dist/Steam-Progress-Setup-*.exe --title "Steam Progress ${GITHUB_REF_NAME#v}" --generate-notes

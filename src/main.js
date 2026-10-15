@@ -163,10 +163,12 @@ ipcMain.handle('library:load', async () => {
   return result;
 });
 
+app.setAppUserModelId('io.github.keinname035.steamprogress'); // taskbar grouping/icon on Windows
+
 app.whenReady().then(() => {
   const win = new BrowserWindow({
     width: 1100, height: 760,
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true },
   });
   win.setMenuBarVisibility(false);

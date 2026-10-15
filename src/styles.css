@@ -2,7 +2,8 @@
 * { box-sizing: border-box; }
 body { margin:0; font:14px system-ui, sans-serif; background:var(--bg); color:#e6e6e6; }
 header { display:flex; gap:10px; align-items:center; padding:12px 16px; position:sticky; top:0; background:var(--bg); z-index:1; }
-h1 { font-size:18px; margin:0 auto 0 0; }
+h1 { font-size:18px; margin:0 auto 0 0; display:flex; align-items:center; gap:10px; }
+.logo { width:28px; height:28px; }
 input, select, button { background:var(--card); color:inherit; border:1px solid #333b4a; border-radius:6px; padding:6px 10px; }
 button { cursor:pointer; }
 button:hover { border-color:var(--accent); }

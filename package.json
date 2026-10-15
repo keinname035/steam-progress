@@ -1,13 +1,49 @@
 {
   "name": "steam-progress",
   "version": "0.1.0",
-  "description": "Steam-Bibliothek, Spielfortschritt und geschätzte Zeit bis zum Durchspielen",
+  "description": "Steam library viewer with achievement progress and estimated time to finish the story",
   "main": "src/main.js",
+  "author": "keinname035",
+  "homepage": "https://github.com/keinname035/steam-progress",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keinname035/steam-progress.git"
+  },
+  "bugs": {
+    "url": "https://github.com/keinname035/steam-progress/issues"
+  },
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "check": "node check-i18n.js",
+    "dist": "electron-builder --win"
   },
   "license": "MIT",
   "devDependencies": {
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "io.github.keinname035.steamprogress",
+    "productName": "Steam Progress",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Steam-Progress-Setup-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "keinname035",
+      "repo": "steam-progress"
+    }
   }
 }

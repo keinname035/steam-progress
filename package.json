@@ -27,8 +27,10 @@
     "productName": "Steam Progress",
     "files": [
       "src/**/*",
+      "build/icon.png",
       "package.json"
     ],
+    "icon": "build/icon.png",
     "directories": {
       "output": "dist"
     },

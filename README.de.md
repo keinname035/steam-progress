@@ -1,6 +1,10 @@
+<p align="center"><img src="build/icon.png" alt="Steam Progress Icon" width="128"></p>
+
 # Steam Progress
 
 [English](README.md) · **Deutsch**
+
+![Steam Progress Screenshot](docs/screenshot.png)
 
 Desktop-App (Electron) für die eigene Steam-Bibliothek: Spielzeit, Achievement-Fortschritt und geschätzte Restzeit bis zum Story-Ende.
 

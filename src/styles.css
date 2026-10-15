@@ -17,5 +17,9 @@ article p { margin:6px 10px 10px; color:var(--muted); font-size:12px; }
 dialog { background:var(--card); color:inherit; border:1px solid #333b4a; border-radius:10px; width:420px; }
 dialog label { display:block; margin:10px 0; }
 dialog input { width:100%; margin-top:4px; }
+.targets { margin:0 10px 8px; font-size:12px; }
+.row { display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px solid #2a3140; color:var(--muted); }
+.row.custom { color:var(--accent); font-weight:600; }
+.goalBtn { margin:0 10px 10px; font-size:12px; padding:4px 8px; }
 .hint { color:var(--muted); font-size:12px; }
 menu { display:flex; justify-content:flex-end; gap:8px; padding:0; }

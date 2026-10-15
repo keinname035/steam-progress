@@ -51,6 +51,86 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
+// ---- HowLongToBeat (inoffiziell, kann jederzeit brechen) ----
+const HLTB = 'https://howlongtobeat.com';
+const HLTB_HEADERS = { 'User-Agent': 'Mozilla/5.0', Referer: HLTB + '/', Origin: HLTB };
+const cacheFile = () => path.join(app.getPath('userData'), 'hltb-cache.json');
+let hltbCache = null;
+let hltbToken = null;
+
+function readCache() {
+  if (!hltbCache) {
+    try { hltbCache = JSON.parse(fs.readFileSync(cacheFile(), 'utf8')); } catch { hltbCache = {}; }
+  }
+  return hltbCache;
+}
+
+async function hltbInit() {
+  const r = await fetch(`${HLTB}/api/search/site/init?t=${Date.now()}`, { headers: HLTB_HEADERS });
+  if (!r.ok) throw new Error(`HLTB init: HTTP ${r.status}`);
+  hltbToken = (await r.json()).token;
+}
+
+const norm = s => s.toLowerCase().replace(/[™®©]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+async function hltbSearch(name, retry = true) {
+  if (!hltbToken) await hltbInit();
+  const body = {
+    searchType: 'games', searchTerms: name.split(' '), searchPage: 1, size: 10,
+    searchOptions: {
+      games: { userId: 0, platform: '', sortCategory: 'popular', rangeCategory: 'main',
+        rangeTime: { min: 0, max: 0 }, gameplay: { perspective: '', flow: '', genre: '', difficulty: '' },
+        rangeYear: { min: '', max: '' }, modifier: '' },
+      users: { sortCategory: 'postcount' }, lists: { sortCategory: 'follows' },
+      filter: '', sort: 0, randomizer: 0,
+    },
+    useCache: true,
+  };
+  const r = await fetch(`${HLTB}/api/search/site`, {
+    method: 'POST',
+    headers: { ...HLTB_HEADERS, 'Content-Type': 'application/json', 'x-auth-token': hltbToken },
+    body: JSON.stringify(body),
+  });
+  if (r.status === 403 && retry) { hltbToken = null; return hltbSearch(name, false); }
+  if (!r.ok) throw new Error(`HLTB: HTTP ${r.status}`);
+  const { data = [] } = await r.json();
+  const games = data.filter(d => d.game_type === 'game');
+  const hit = games.find(d => norm(d.game_name) === norm(name)) || games[0];
+  if (!hit || !(hit.comp_main || hit.comp_plus || hit.comp_100)) return null;
+  return {
+    matched: hit.game_name,
+    mainMin: Math.round(hit.comp_main / 60),
+    plusMin: Math.round(hit.comp_plus / 60),
+    fullMin: Math.round(hit.comp_100 / 60),
+  };
+}
+
+async function hltbFor(game) {
+  const cache = readCache();
+  const hit = cache[game.appid];
+  if (hit !== undefined && (hit !== null || Date.now() - (cache._miss?.[game.appid] || 0) < 7 * 864e5)) return hit;
+  try {
+    const res = await hltbSearch(game.name);
+    cache[game.appid] = res;
+    if (res === null) (cache._miss ||= {})[game.appid] = Date.now();
+    return res;
+  } catch {
+    return null; // nicht cachen, nächster Versuch beim Neuladen
+  }
+}
+
+// ---- eigene Ziele pro Spiel (z. B. "Goldenes Armband") ----
+const goalsFile = () => path.join(app.getPath('userData'), 'goals.json');
+const loadGoals = () => { try { return JSON.parse(fs.readFileSync(goalsFile(), 'utf8')); } catch { return {}; } };
+ipcMain.handle('goals:get', () => loadGoals());
+ipcMain.handle('goals:set', (_e, appid, goal) => {
+  const g = loadGoals();
+  if (goal && goal.hours > 0) g[appid] = { label: String(goal.label || 'Ziel'), hours: Number(goal.hours) };
+  else delete g[appid];
+  fs.writeFileSync(goalsFile(), JSON.stringify(g, null, 2));
+  return g;
+});
+
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (_e, s) => { saveSettings(s); return true; });
 
@@ -62,7 +142,7 @@ ipcMain.handle('library:load', async () => {
   );
   const games = data?.response?.games;
   if (!games) throw new Error('Keine Spiele gefunden – Profil/Spieldetails auf "Öffentlich" stellen?');
-  return mapLimit(games, 8, async g => {
+  const result = await mapLimit(games, 8, async g => {
     const ach = await fetchAchievements(apiKey, steamId, g.appid);
     return {
       appid: g.appid,
@@ -74,6 +154,12 @@ ipcMain.handle('library:load', async () => {
       estimate: estimate(g.playtime_forever, ach),
     };
   });
+  // Nur Spiele mit Spielzeit abfragen (Backlog ohne Spielzeit braucht keine Restzeit-Anzeige),
+  // und höflich: wenige parallele Anfragen. Ergebnisse werden gecacht.
+  const played = result.filter(g => g.playtimeMin > 0);
+  await mapLimit(played, 3, async g => { g.hltb = await hltbFor(g); });
+  fs.writeFileSync(cacheFile(), JSON.stringify(readCache()));
+  return result;
 });
 
 app.whenReady().then(() => {

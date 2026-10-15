@@ -133,16 +133,16 @@ ipcMain.handle('goals:set', (_e, appid, goal) => {
 });
 
 ipcMain.handle('settings:get', () => loadSettings());
-ipcMain.handle('settings:set', (_e, s) => { saveSettings(s); return true; });
+ipcMain.handle('settings:set', (_e, s) => { saveSettings({ ...loadSettings(), ...s }); return true; });
 
 ipcMain.handle('library:load', async () => {
   const { apiKey, steamId } = loadSettings();
-  if (!apiKey || !steamId) throw new Error('API-Key und Steam-ID in den Einstellungen eintragen.');
+  if (!apiKey || !steamId) throw new Error('ERR_NO_CREDENTIALS');
   const data = await steamGet(
     `/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
   );
   const games = data?.response?.games;
-  if (!games) throw new Error('Keine Spiele gefunden – Profil/Spieldetails auf "Öffentlich" stellen?');
+  if (!games) throw new Error('ERR_NO_GAMES');
   const result = await mapLimit(games, 8, async g => {
     const ach = await fetchAchievements(apiKey, steamId, g.appid);
     return {

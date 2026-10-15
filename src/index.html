@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https://cdn.cloudflare.steamstatic.com data:; style-src 'self'">
@@ -9,42 +9,57 @@
 <body>
   <header>
     <h1>Steam Progress</h1>
-    <input id="search" placeholder="Suchen…">
+    <input id="search" data-i18n-ph="search">
     <select id="sort">
-      <option value="progress">Fortschritt</option>
-      <option value="remaining">Restzeit (kürzeste zuerst)</option>
-      <option value="playtime">Spielzeit</option>
-      <option value="last">Zuletzt gespielt</option>
-      <option value="name">Name</option>
+      <option value="progress" data-i18n="sort_progress"></option>
+      <option value="remaining" data-i18n="sort_remaining"></option>
+      <option value="playtime" data-i18n="sort_playtime"></option>
+      <option value="last" data-i18n="sort_last"></option>
+      <option value="name" data-i18n="sort_name"></option>
     </select>
-    <button id="reload">Neu laden</button>
-    <button id="settingsBtn">Einstellungen</button>
+    <button id="reload" data-i18n="reload"></button>
+    <button id="settingsBtn" data-i18n="settings"></button>
   </header>
   <p id="status"></p>
   <main id="grid"></main>
 
-  <dialog id="settings">
+  <dialog id="langDialog">
     <form method="dialog">
-      <h2>Einstellungen</h2>
-      <label>Steam-API-Key <input id="apiKey" type="password"></label>
-      <label>SteamID64 <input id="steamId"></label>
-      <p class="hint">Key: steamcommunity.com/dev/apikey · Profil &amp; Spieldetails müssen öffentlich sein.</p>
-      <menu><button value="cancel">Abbrechen</button><button id="save" value="ok">Speichern</button></menu>
+      <h2 data-i18n="lang_title"></h2>
+      <p class="hint" data-i18n="lang_text"></p>
+      <select id="langFirst"></select>
+      <menu><button id="langOk" value="ok" data-i18n="continue"></button></menu>
     </form>
   </dialog>
-  <dialog id="goalDialog">
+
+  <dialog id="settings">
     <form method="dialog">
-      <h2>Story-Fortschritt</h2>
-      <p id="goalGame" class="hint"></p>
-      <label>Wie weit bist du in der Story? (0–100 %) <input id="goalPct" type="text" inputmode="decimal" placeholder="z. B. 40"></label>
-      <p class="hint">Restzeit = Story-Dauer laut HowLongToBeat × (100 % − dein Fortschritt).</p>
+      <h2 data-i18n="settings_title"></h2>
+      <label><span data-i18n="language"></span> <select id="langSelect"></select></label>
+      <label><span data-i18n="api_key"></span> <input id="apiKey" type="password"></label>
+      <label><span data-i18n="steam_id"></span> <input id="steamId"></label>
+      <p class="hint" data-i18n="settings_hint"></p>
       <menu>
-        <button value="cancel">Abbrechen</button>
-        <button id="goalClear" value="clear">Zurücksetzen</button>
-        <button id="goalSave" value="ok">Speichern</button>
+        <button value="cancel" data-i18n="cancel"></button>
+        <button id="save" value="ok" data-i18n="save"></button>
       </menu>
     </form>
   </dialog>
+
+  <dialog id="goalDialog">
+    <form method="dialog">
+      <h2 data-i18n="progress_title"></h2>
+      <p id="goalGame" class="hint"></p>
+      <label><span data-i18n="progress_q"></span> <input id="goalPct" type="text" inputmode="decimal" data-i18n-ph="progress_ph"></label>
+      <p class="hint" data-i18n="progress_hint"></p>
+      <menu>
+        <button value="cancel" data-i18n="cancel"></button>
+        <button id="goalClear" value="clear" data-i18n="reset"></button>
+        <button id="goalSave" value="ok" data-i18n="save"></button>
+      </menu>
+    </form>
+  </dialog>
+  <script src="i18n.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

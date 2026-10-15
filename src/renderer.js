@@ -10,10 +10,10 @@ const fmt = min => {
 };
 const progressOf = g => (g.achievements ? g.achievements.done / g.achievements.total : -1);
 
-// Story-Fortschritt (%) kommt nur von dir; Spielzeit wird NICHT zur Schätzung benutzt.
+// Story progress (%) comes only from the user; playtime is NOT used for estimates.
 const storyPct = g => goals[g.appid]?.pct;
 
-// Restzeit bis Story-Ende: HLTB-Story-Dauer * (1 - Fortschritt). Ohne Eingabe: unbekannt.
+// Time left to finish the story: HLTB story length * (1 - progress). Unknown without input.
 function storyLeft(g) {
   const pct = storyPct(g);
   if (pct == null || !g.hltb?.mainMin) return null;
@@ -57,64 +57,93 @@ function render() {
 
     const meta = document.createElement('p');
     const ach = g.achievements
-      ? `${g.achievements.done}/${g.achievements.total} Achievements (${Math.round(p * 100)} %)`
-      : 'Keine Achievements';
-    meta.textContent = `${fmt(g.playtimeMin)} gespielt · ${ach}`;
+      ? t('ach', { d: g.achievements.done, t: g.achievements.total, p: Math.round(p * 100) })
+      : t('no_ach');
+    meta.textContent = `${t('played', { t: fmt(g.playtimeMin) })} · ${ach}`;
 
     const box = document.createElement('div'); box.className = 'targets';
     if (g.hltb) {
-      box.append(row('Story-Dauer (HLTB)', fmt(g.hltb.mainMin)));
+      box.append(row(t('story_len'), fmt(g.hltb.mainMin)));
       const pct = storyPct(g);
-      box.append(row('Dein Story-Fortschritt', pct == null ? 'nicht eingetragen' : `${pct} %`));
+      box.append(row(t('your_progress'), pct == null ? t('not_entered') : `${pct} %`));
       const left = storyLeft(g);
-      if (left != null) box.append(row('Restzeit bis Story-Ende', left <= 0 ? '✔ fertig' : `~${fmt(left)}`));
+      if (left != null) box.append(row(t('rest_story'), left <= 0 ? t('done') : `~${fmt(left)}`));
     } else {
-      box.append(row('Story-Dauer', 'keine Daten gefunden'));
+      box.append(row(t('story_len'), t('no_data')));
     }
 
     const edit = document.createElement('button');
     edit.className = 'goalBtn';
-    edit.textContent = storyPct(g) != null ?'Fortschritt ändern' : 'Story-Fortschritt eintragen';
+    edit.textContent = storyPct(g) != null ? t('change_progress') : t('set_progress');
     edit.addEventListener('click', () => openGoal(g));
 
     card.append(img, h, bar, meta, box, edit);
     return card;
   }));
-  $('status').textContent = `${list.length} von ${games.length} Spielen`;
+  $('status').textContent = t('status_count', { n: list.length, m: games.length });
 }
 
 function openGoal(g) {
   editingAppid = g.appid;
-  const cur = goals[g.appid];
   $('goalGame').textContent = g.name;
-  $('goalPct').value = cur?.pct ?? '';
+  $('goalPct').value = goals[g.appid]?.pct ?? '';
   $('goalDialog').showModal();
 }
 
+// Main process throws plain codes or Steam errors; map known codes to translated text.
+function errorText(e) {
+  const msg = String(e.message).replace(/^Error invoking remote method [^:]+: (Error: )?/, '');
+  const known = { ERR_NO_CREDENTIALS: 'err_no_credentials', ERR_NO_GAMES: 'err_no_games' };
+  return known[msg] ? t(known[msg]) : msg;
+}
+
 async function load() {
-  $('status').textContent = 'Lade Bibliothek, Achievements und Durchspielzeiten… (beim ersten Mal dauert das)';
+  $('status').textContent = t('loading');
   try {
     goals = await window.steam.getGoals();
     games = await window.steam.loadLibrary();
     render();
   } catch (e) {
-    $('status').textContent = e.message.replace(/^Error invoking remote method [^:]+: (Error: )?/, '');
+    $('status').textContent = errorText(e);
   }
+}
+
+function fillLanguageSelect(sel, current) {
+  sel.replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => {
+    const o = document.createElement('option');
+    o.value = code; o.textContent = name; o.selected = code === current;
+    return o;
+  }));
+}
+
+async function applyLanguage(lang) {
+  setLanguage(lang);
+  await window.steam.setSettings({ lang });
+  if (games.length) render(); else $('status').textContent = '';
 }
 
 $('search').addEventListener('input', render);
 $('sort').addEventListener('change', render);
 $('reload').addEventListener('click', load);
+
 $('settingsBtn').addEventListener('click', async () => {
   const s = await window.steam.getSettings();
+  fillLanguageSelect($('langSelect'), s.lang || DEFAULT_LANG);
   $('apiKey').value = s.apiKey || '';
   $('steamId').value = s.steamId || '';
   $('settings').showModal();
 });
 $('save').addEventListener('click', async () => {
-  await window.steam.setSettings({ apiKey: $('apiKey').value.trim(), steamId: $('steamId').value.trim() });
+  const lang = $('langSelect').value;
+  setLanguage(lang);
+  await window.steam.setSettings({
+    lang,
+    apiKey: $('apiKey').value.trim(),
+    steamId: $('steamId').value.trim(),
+  });
   load();
 });
+
 $('goalSave').addEventListener('click', async () => {
   goals = await window.steam.setGoal(editingAppid, {
     pct: parseFloat($('goalPct').value.replace(',', '.')),
@@ -126,4 +155,22 @@ $('goalClear').addEventListener('click', async () => {
   render();
 });
 
-window.steam.getSettings().then(s => (s.apiKey && s.steamId ? load() : $('settingsBtn').click()));
+// Live-preview the language inside the first-run dialog.
+$('langFirst').addEventListener('change', () => setLanguage($('langFirst').value));
+
+async function start() {
+  const s = await window.steam.getSettings();
+  setLanguage(s.lang || DEFAULT_LANG);
+  if (!s.lang) {
+    // First launch: ask for the language (English preselected), then continue.
+    fillLanguageSelect($('langFirst'), DEFAULT_LANG);
+    $('langDialog').addEventListener('close', async () => {
+      await applyLanguage($('langFirst').value);
+      if (s.apiKey && s.steamId) load(); else $('settingsBtn').click();
+    }, { once: true });
+    $('langDialog').showModal();
+    return;
+  }
+  if (s.apiKey && s.steamId) load(); else $('settingsBtn').click();
+}
+start();

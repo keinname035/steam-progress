@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https://cdn.cloudflare.steamstatic.com data:; style-src 'self'">
+  <title>Steam Progress</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Steam Progress</h1>
+    <input id="search" placeholder="Suchen…">
+    <select id="sort">
+      <option value="progress">Fortschritt</option>
+      <option value="remaining">Restzeit (kürzeste zuerst)</option>
+      <option value="playtime">Spielzeit</option>
+      <option value="last">Zuletzt gespielt</option>
+      <option value="name">Name</option>
+    </select>
+    <button id="reload">Neu laden</button>
+    <button id="settingsBtn">Einstellungen</button>
+  </header>
+  <p id="status"></p>
+  <main id="grid"></main>
+
+  <dialog id="settings">
+    <form method="dialog">
+      <h2>Einstellungen</h2>
+      <label>Steam-API-Key <input id="apiKey" type="password"></label>
+      <label>SteamID64 <input id="steamId"></label>
+      <p class="hint">Key: steamcommunity.com/dev/apikey · Profil &amp; Spieldetails müssen öffentlich sein.</p>
+      <menu><button value="cancel">Abbrechen</button><button id="save" value="ok">Speichern</button></menu>
+    </form>
+  </dialog>
+  <script src="renderer.js"></script>
+</body>
+</html>

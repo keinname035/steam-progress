@@ -1,0 +1,13 @@
+{
+  "name": "steam-progress",
+  "version": "0.1.0",
+  "description": "Steam-Bibliothek, Spielfortschritt und geschätzte Zeit bis zum Durchspielen",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

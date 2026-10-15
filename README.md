@@ -1,25 +1,31 @@
 # Steam Progress
 
-Eine App, um die eigene Steam-Bibliothek einzusehen, den Spielfortschritt zu verfolgen und die geschätzte Restzeit bis zum Durchspielen zu sehen.
+Desktop-App (Electron) für die eigene Steam-Bibliothek: Spielzeit, Fortschritt und geschätzte Restzeit bis zum Durchspielen.
 
-## Geplante Features
+## Features
 
-- Steam-Bibliothek anzeigen (Cover, Name, Spielzeit)
-- Fortschritt pro Spiel (Achievements als Näherung)
-- Geschätzte Zeit bis zum Durchspielen (Spielzeit vs. durchschnittliche Dauer, z. B. HowLongToBeat)
-- Sortieren/Filtern (nach Fortschritt, Restzeit, zuletzt gespielt)
+- Bibliothek als Kachelansicht mit Cover und Spielzeit
+- Fortschritt pro Spiel anhand der Achievements
+- Geschätzte Restzeit: `Spielzeit / Fortschritt - Spielzeit` (erst ab 5 % Fortschritt und 30 min Spielzeit)
+- Suche und Sortierung (Fortschritt, Restzeit, Spielzeit, zuletzt gespielt, Name)
 
-## Datenquellen
+## Start
 
-- Steam Web API: `IPlayerService/GetOwnedGames`, `ISteamUserStats/GetPlayerAchievements`
-- Durchspielzeit: HowLongToBeat (inoffiziell, kein offizielles API)
+```bash
+npm install
+npm start
+```
 
-## Setup
+Beim ersten Start in den Einstellungen eintragen:
 
-1. Steam-API-Key holen: https://steamcommunity.com/dev/apikey
-2. `.env.example` nach `.env` kopieren und `STEAM_API_KEY` sowie `STEAM_ID` eintragen
-3. Steam-Profil muss auf "Öffentlich" stehen (Spieldetails)
+1. Steam-API-Key: https://steamcommunity.com/dev/apikey
+2. SteamID64 (z. B. über https://steamid.io)
+3. Steam-Profil und "Spieldetails" müssen auf "Öffentlich" stehen
 
-## Status
+Die Zugangsdaten werden lokal im Electron-userData-Ordner gespeichert.
 
-Frühes Planungsstadium.
+## Grenzen / Ideen
+
+- Spiele ohne Achievements haben keinen Fortschritt und keine Schätzung.
+- Die Schätzung ist eine Heuristik; Anbindung an HowLongToBeat wäre genauer (kein offizielles API).
+- Caching der Achievements, damit das Neuladen schneller geht.

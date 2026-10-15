@@ -30,3 +30,4 @@ Die Zugangsdaten werden lokal im Electron-userData-Ordner gespeichert.
 - Die SchÃ¤tzung ist eine Heuristik; Anbindung an HowLongToBeat wÃ¤re genauer (kein offizielles API).
 - Caching der Achievements, damit das Neuladen schneller geht.
 
+

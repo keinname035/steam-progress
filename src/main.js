@@ -125,7 +125,8 @@ const loadGoals = () => { try { return JSON.parse(fs.readFileSync(goalsFile(), '
 ipcMain.handle('goals:get', () => loadGoals());
 ipcMain.handle('goals:set', (_e, appid, goal) => {
   const g = loadGoals();
-  if (goal && goal.hours > 0) g[appid] = { label: String(goal.label || 'Ziel'), hours: Number(goal.hours) };
+  const pct = Number(goal?.pct);
+  if (goal && Number.isFinite(pct) && pct >= 0 && pct <= 100) g[appid] = { pct };
   else delete g[appid];
   fs.writeFileSync(goalsFile(), JSON.stringify(g, null, 2));
   return g;

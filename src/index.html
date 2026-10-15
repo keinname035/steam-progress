@@ -34,14 +34,13 @@
   </dialog>
   <dialog id="goalDialog">
     <form method="dialog">
-      <h2>Eigenes Ziel</h2>
+      <h2>Story-Fortschritt</h2>
       <p id="goalGame" class="hint"></p>
-      <label>Bezeichnung <input id="goalLabel" placeholder="z. B. Goldenes Armband"></label>
-      <label>Gesamtspielzeit bis dahin (Stunden) <input id="goalHours" type="text" inputmode="decimal" placeholder="z. B. 25"></label>
-      <p class="hint">Die App rechnet: Ziel-Stunden minus bisherige Spielzeit = Restzeit.</p>
+      <label>Wie weit bist du in der Story? (0–100 %) <input id="goalPct" type="text" inputmode="decimal" placeholder="z. B. 40"></label>
+      <p class="hint">Restzeit = Story-Dauer laut HowLongToBeat × (100 % − dein Fortschritt).</p>
       <menu>
         <button value="cancel">Abbrechen</button>
-        <button id="goalClear" value="clear">Ziel entfernen</button>
+        <button id="goalClear" value="clear">Zurücksetzen</button>
         <button id="goalSave" value="ok">Speichern</button>
       </menu>
     </form>

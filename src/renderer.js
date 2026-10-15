@@ -10,39 +10,23 @@ const fmt = min => {
 };
 const progressOf = g => (g.achievements ? g.achievements.done / g.achievements.total : -1);
 
-// Zeilen "Ziel: gesamt (noch X)" für ein Spiel
-function targets(g) {
-  const rows = [];
-  const goal = goals[g.appid];
-  if (goal) rows.push({ label: goal.label, total: goal.hours * 60, custom: true });
-  if (g.hltb) {
-    rows.push({ label: 'Story', total: g.hltb.mainMin });
-    rows.push({ label: 'Story + Extras', total: g.hltb.plusMin });
-    rows.push({ label: '100 %', total: g.hltb.fullMin });
-  }
-  return rows.filter(r => r.total > 0).map(r => ({
-    ...r,
-    left: Math.max(0, r.total - g.playtimeMin),
-  }));
-}
+// Story-Fortschritt (%) kommt nur von dir; Spielzeit wird NICHT zur Schätzung benutzt.
+const storyPct = g => goals[g.appid]?.pct;
 
-// Kürzeste noch offene Restzeit zum Sortieren: eigenes Ziel, sonst Story
-function sortRemaining(g) {
-  const goal = goals[g.appid];
-  if (goal) return Math.max(0, goal.hours * 60 - g.playtimeMin);
-  if (g.hltb?.mainMin) return Math.max(0, g.hltb.mainMin - g.playtimeMin);
-  return g.estimate?.remainingMin ?? Infinity;
+// Restzeit bis Story-Ende: HLTB-Story-Dauer * (1 - Fortschritt). Ohne Eingabe: unbekannt.
+function storyLeft(g) {
+  const pct = storyPct(g);
+  if (pct == null || !g.hltb?.mainMin) return null;
+  return g.hltb.mainMin * (1 - pct / 100);
 }
+const sortRemaining = g => storyLeft(g) ?? Infinity;
 
-function row(t, g) {
+function row(label, value) {
   const el = document.createElement('div');
-  el.className = 'row' + (t.custom ? ' custom' : '');
-  const pct = Math.min(100, Math.round((g.playtimeMin / t.total) * 100));
-  const name = document.createElement('span');
-  name.textContent = t.label;
-  const val = document.createElement('span');
-  val.textContent = t.left === 0 ? `✔ erreicht (${fmt(t.total)})` : `noch ${fmt(t.left)} von ${fmt(t.total)} · ${pct} %`;
-  el.append(name, val);
+  el.className = 'row';
+  const a = document.createElement('span'); a.textContent = label;
+  const b = document.createElement('span'); b.textContent = value;
+  el.append(a, b);
   return el;
 }
 
@@ -78,20 +62,19 @@ function render() {
     meta.textContent = `${fmt(g.playtimeMin)} gespielt · ${ach}`;
 
     const box = document.createElement('div'); box.className = 'targets';
-    const ts = targets(g);
-    ts.forEach(t => box.append(row(t, g)));
-    if (!ts.length) {
-      const none = document.createElement('div');
-      none.className = 'row';
-      none.textContent = g.estimate && g.estimate.remainingMin > 0
-        ? `Restzeit (Schätzung aus Achievements): ~${fmt(g.estimate.remainingMin)}`
-        : 'Keine Zeitdaten gefunden';
-      box.append(none);
+    if (g.hltb) {
+      box.append(row('Story-Dauer (HLTB)', fmt(g.hltb.mainMin)));
+      const pct = storyPct(g);
+      box.append(row('Dein Story-Fortschritt', pct == null ? 'nicht eingetragen' : `${pct} %`));
+      const left = storyLeft(g);
+      if (left != null) box.append(row('Restzeit bis Story-Ende', left <= 0 ? '✔ fertig' : `~${fmt(left)}`));
+    } else {
+      box.append(row('Story-Dauer', 'keine Daten gefunden'));
     }
 
     const edit = document.createElement('button');
     edit.className = 'goalBtn';
-    edit.textContent = goals[g.appid] ? 'Ziel ändern' : 'Eigenes Ziel setzen';
+    edit.textContent = storyPct(g) != null ?'Fortschritt ändern' : 'Story-Fortschritt eintragen';
     edit.addEventListener('click', () => openGoal(g));
 
     card.append(img, h, bar, meta, box, edit);
@@ -104,8 +87,7 @@ function openGoal(g) {
   editingAppid = g.appid;
   const cur = goals[g.appid];
   $('goalGame').textContent = g.name;
-  $('goalLabel').value = cur?.label || '';
-  $('goalHours').value = cur?.hours || '';
+  $('goalPct').value = cur?.pct ?? '';
   $('goalDialog').showModal();
 }
 
@@ -135,8 +117,7 @@ $('save').addEventListener('click', async () => {
 });
 $('goalSave').addEventListener('click', async () => {
   goals = await window.steam.setGoal(editingAppid, {
-    label: $('goalLabel').value.trim() || 'Ziel',
-    hours: parseFloat($('goalHours').value.replace(',', '.')),
+    pct: parseFloat($('goalPct').value.replace(',', '.')),
   });
   render();
 });
